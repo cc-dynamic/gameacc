@@ -263,7 +263,7 @@ radius_pap_auth(char *user,
     make_username_realm(user);
 
     if (radius_pre_auth_hook) {
-	radius_pre_auth_hook(rstate.user,
+	radius_pre_auth_hook(user,
 			     &rstate.authserver,
 			     &rstate.acctserver);
     }
@@ -375,7 +375,7 @@ radius_chap_verify(char *user, char *ourname, int id,
 	make_username_realm(user);
 	rstate.client_port = get_client_port (portnummap ? devnam : ifname);
 	if (radius_pre_auth_hook) {
-	    radius_pre_auth_hook(rstate.user,
+	    radius_pre_auth_hook(user,
 				 &rstate.authserver,
 				 &rstate.acctserver);
 	}
@@ -506,9 +506,19 @@ static void
 make_username_realm(char *user)
 {
     char *default_realm;
+    char *p=NULL;
+    char c;
 
     if ( user != NULL ) {
-	strlcpy(rstate.user, user, sizeof(rstate.user));
+        p=strchr(user,'@');
+	if (p!=NULL){
+            c=*p;
+            *p=0;
+            strlcpy(rstate.user,user,sizeof(rstate.user));
+            *p=c;
+        } else {
+	    strlcpy(rstate.user, user, sizeof(rstate.user));
+        }
     }  else {
 	rstate.user[0] = 0;
     }
