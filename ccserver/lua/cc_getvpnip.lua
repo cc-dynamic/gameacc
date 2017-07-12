@@ -57,12 +57,43 @@ function _M.saveuserrtt(self,userreq,serverip)
 end
 
 
-function _M.getvpnip(self,userreq)
+function _M.getvpnipspec(self,db,userreq)
+	local sql
+	local vpnip
+
+	
+	vpnip=""
+
+	sql="select vpnip from game_spec_user_vpn_tbl where username='" .. userreq['uid'] .. "'"
+
+	local res,err,errcode,sqlstate = db:query(sql)
+	if not res then
+		return vpnip
+	end
+
+	for k,v in pairs(res) do
+		vpnip=v[1]
+		break
+	end
+
+
+	return vpnip
+end
+
+
+function _M.getvpnip(self,db,userreq)
     local serverip={}
 
 	local id=0
 	local rttmin=99999
 	local item
+
+
+	spec_ip=self:getvpnipspec(db,userreq)
+	if spec_ip ~= "" then
+		serverip['serverip']=spec_ip
+		return serverip
+	end
 
 
 	for k,v in pairs(self.qoslst) do
@@ -120,8 +151,9 @@ function _M.process(self,userreq)
 	
 	self.qoslst=self:checkparm(userreq)
 
-
-    local serverip=self:getvpnip(userreq)
+	local db = cc_global:init_conn()
+    local serverip=self:getvpnip(db,userreq)
+	cc_global:deinit_conn(db)
 
 
     cc_global:returnwithcode(0,serverip)
