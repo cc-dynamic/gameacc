@@ -35,7 +35,7 @@ function _M.uploadinfo(self,db,userreq)
 
 	local nowstr=os.date("%Y-%m-%d %H:%M:%S")
 
-	local sql="insert into game_sdk_upload_tbl (clientip,customerid,uploadtime,content) values ('" .. ngx.var.remote_addr .."'," .. CUSTOMERID .."'" .. nowstr .. "','" .. infostr .. "')"
+	local sql="insert into game_sdk_upload_tbl (clientip,customerid,uploadtime,content) values ('" .. ngx.var.remote_addr .."'," .. CUSTOMERID ..",'" .. nowstr .. "','" .. infostr .. "')"
 
     --log(ERR,sql)
     
