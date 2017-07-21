@@ -64,9 +64,9 @@ if "POST"==request_method then
 			local cc_getgamelist = cc_getgamelist_obj:new()
             cc_getgamelist:process(userdata)
         elseif cmdid == 2 then
-            local feixun_uploadinfo_obj = require "feixun_uploadinfo"
-			local feixun_uploadinfo = feixun_uploadinfo_obj:new()
-            feixun_uploadinfo:process(userdata)
+            local maike_uploadinfo_obj = require "maike_uploadinfo"
+			local maike_uploadinfo = maike_uploadinfo_obj:new()
+            maike_uploadinfo:process(userdata)
         elseif cmdid == 3 then
             local cc_getvpnip_obj = require "cc_getvpnip"
 			local cc_getvpnip = cc_getvpnip_obj:new()
