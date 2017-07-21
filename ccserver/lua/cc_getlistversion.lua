@@ -1,7 +1,6 @@
 require "os"
 
 local cc_global=require "cc_global"
-
 local MOD_ERR_BASE = cc_global.ERR_MOD_GETLISTVERSION_BASE
 
 local _M = { 
@@ -18,16 +17,11 @@ local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
-
 local mt = { __index = _M}
-
-
 
 function _M.new(self)
 	return setmetatable({}, mt)
 end
-
 
 function _M.checkparam(self,userreq)
     if userreq['data']==nil then
@@ -35,26 +29,17 @@ function _M.checkparam(self,userreq)
     end
     
     local req_param=userreq['data']
-
     if req_param['gameid'] == nil then
         cc_global:returnwithcode(self.MOD_ERR_INVALID_PARAM,nil)
     end
     
     --log(ERR,req_param['gameid'])
-    
     gameid=tonumber(req_param['gameid'])
-    
-    
     if gameid == nil then
         cc_global:returnwithcode(self.MOD_ERR_PARAM_TYPE,nil)
     end
-    
     self.gameid=gameid
-    
-    
-    
 end
-
 
 function _M.getlistversion(self,db)
     local gamelistversion={}
@@ -65,7 +50,6 @@ function _M.getlistversion(self,db)
     --log(ERR,sql)
     
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	cc_global:returnwithcode(self.MOD_ERR_QUERY_LISTVERSION,nil)
     end
@@ -80,18 +64,15 @@ function _M.getlistversion(self,db)
     return gamelistversion
 end
 
-
 function _M.process(self,userreq)
     self.gameid=0
-    
-    
+
     self:checkparam(userreq)
     
     local db = cc_global:init_conn()
     local gamelistversion=self:getlistversion(db)
     cc_global:deinit_conn(db)
     cc_global:returnwithcode(0,gamelistversion)
-
 end
 
 return _M

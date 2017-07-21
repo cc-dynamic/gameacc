@@ -17,12 +17,10 @@ local _M = {
     ERR_DBINIT = ERR_BASE_ERROR-11,
     ERR_DBDEINIT = ERR_BASE_ERROR-12,
 
-
 	ERR_REDIS_ALLOC = ERR_BASE_ERROR-20,
 	ERR_REDIS_CONNECT = ERR_BASE_ERROR-21,
 	ERR_REDIS_AUTH = ERR_BASE_ERROR-22,
 	ERR_REDIS_KEEPALIVE=ERR_BASE_ERROR-23,
-    
 
     ERR_MOD_GETGAMELIST_BASE = ERR_BASE_ERROR-100,
     ERR_MOD_UPLOADINFO_BASE = ERR_BASE_ERROR-200,
@@ -30,11 +28,8 @@ local _M = {
     ERR_MOD_GETLISTVERSION_BASE = ERR_BASE_ERROR-400,
 	ERR_MOD_GETVPNIPLIST_BASE = ERR_BASE_ERROR-500, 
     ERR_MOD_GETGAMELISTPORT_BASE = ERR_BASE_ERROR-600,
-    
-    
-    
-    
 }
+
 local mt = { __index = _M}
 local cjson = require "cjson"
 
@@ -42,8 +37,17 @@ function _M.new(self)
 	return setmetatable({}, mt)
 end
 
--- error function
+function _M.redis_hash_get(self,red,hashname,key)
+    local retval = nil
+    if red:hexists(hashname,key) == 0 then
+        return retval
+    end
 
+    retval = red:hget(hashname,key)
+    return retval
+end
+
+-- error function
 function _M.makereturninfo(self,errcode,data)
     local retinfo={}
     local retstr
@@ -60,6 +64,9 @@ function _M.returnwithcode(self,errcode,data)
     local retstr
     retstr=self:makereturninfo(errcode,data)
     ngx.say(retstr)
+    if errcode ~= 0 then
+        ngx.log(ngx.ERR,"errcode = " .. errcode)
+    end
     ngx.exit(200)
 end
 
@@ -93,29 +100,30 @@ function _M.init_redis(self)
 	local red = redis:new()
 
 	if not red then
-		self:returnwithcode(self.ERR_REDIS_ALLOC,nil)
+		--self:returnwithcode(self.ERR_REDIS_ALLOC,nil)
+                return nil
 	end
 
 	red:set_timeout(1000)	-- 1 sec
 	
 	local ok,err = red:connect("127.0.0.1",6379)
 	if not ok then
-		self:returnwithcode(self.ERR_REDIS_CONNECT,nil)
+		--self:returnwithcode(self.ERR_REDIS_CONNECT,nil)
+                return nil
 	end	
 	
 	local res,err = red:auth("cc_chinacache")
+	--local res,err = red:auth("chinacache")
 	if not res then
-		self:returnwithcode(self.ERR_REDIS_AUTH,nil)
+                return nil
+		--self:returnwithcode(self.ERR_REDIS_AUTH,nil)
 	end
-
 
 	--local ok,err = red:set_keepalive(10000,100)
 	--if not ok then
 	--	ngx.log(ngx.ERR,tostring(err))
 	--	self:returnwithcode(self.ERR_REDIS_AUTH,nil)
 	--end
-
-
 	return red
 end
 
@@ -126,14 +134,11 @@ function _M.deinit_redis(self,red)
 	end
 end
 
-
 function _M.deinit_conn(self,db)
     local ok,err = db:close()
     if not ok then
     	self:returnwithcode(self.ERR_DBDEINIT,nil)
     end
 end
-
-
 
 return _M

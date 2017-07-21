@@ -7,7 +7,6 @@ local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
 local function __TRACEBACK__ (errmsg)
     local track_text = debug.traceback(tostring(errmsg),6);
     log(ERR,"----------------------")
@@ -15,9 +14,6 @@ local function __TRACEBACK__ (errmsg)
     log(ERR,"----------------------")
     return false
 end
-
-
-
 
 if "POST"==request_method then
     ngx.req.read_body()
@@ -31,7 +27,6 @@ if "POST"==request_method then
     if status == false then
         cc_global:returnwithcode(cc_global.ERR_INVALID_JSON_FORMAT,nil)
     end
-    
 
     --userdata=cjson.decode(body_str)
     

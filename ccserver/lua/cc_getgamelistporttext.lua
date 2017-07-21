@@ -1,7 +1,6 @@
 require "os"
 
 local cc_global=require "cc_global"
-
 local MOD_ERR_BASE = cc_global.ERR_MOD_GETGAMELISTPORT_BASE
 
 local _M = { 
@@ -19,25 +18,18 @@ local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
-
 local mt = { __index = _M}
-
 
 local MINVPNRTT=30	-- vpn rtt below MINVPNRTT will not return iplst
 local MAXTRANSRTT=100	-- total rtt more than MAXTRANSRTT not return iplst
-
-
 
 function _M.new(self)
 	return setmetatable({}, mt)
 end
 
-
 function _M.checkparm(self,userreq)
     local gameid,regionid
 	local svpninfo
-
 
     if userreq['data']==nil then
         cc_global:returnwithcode(self.MOD_ERR_INVALID_PARAM,nil)
@@ -50,25 +42,20 @@ function _M.checkparm(self,userreq)
     
     gameid=tonumber(req_param['gameid'])
     regionid=tonumber(req_param['regionid'])
-    
     if gameid == nil or regionid==nil then
         cc_global:returnwithcode(self.MOD_ERR_PARAM_TYPE,nil)
     end
 
 	svpninfo=req_param['svpninfo']
-
 	if svpninfo ~= nil then
 		if svpninfo['ip']~=nil and svpninfo['rtt']~=nil then
 			self.svpninfo=svpninfo
 		end
 	end
 
-	
-    
     self.gameid=gameid
     self.regionid=regionid
     self.uid=tostring(userreq['uid'])
- 
 end
 
 function _M.getgameiplist(self,db)
@@ -77,15 +64,10 @@ function _M.getgameiplist(self,db)
     local percent=0
     local counter
     local maxreturn=0
-
-    
     
     sql = "select game_list_percent from game_name_tbl where game_id=" .. self.gameid
-    
     --log(ERR,sql)
-    
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	cc_global:returnwithcode(self.MOD_ERR_GETGAMELIST,nil)
     end
@@ -109,9 +91,7 @@ function _M.getgameiplist(self,db)
 
     --log(ERR,sql)
     
-    
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	cc_global:returnwithcode(self.MOD_ERR_GETGAMELIST,nil)
     end
@@ -122,17 +102,12 @@ function _M.getgameiplist(self,db)
     counter=1
 
     -- gameip(1),gamemask(2),gameport(3)
-
-    
     local ipstr=""
     local ipinfo={}
     
     for k,v in pairs(res) do
         --log(ERR,"iplist:",v[1]," ",v[2]," ",v[3])
-
-    	
     	ipinfo[counter]=v[1]..":"..tostring(v[3]).."/"..tostring(v[2])
-    	
     	counter=counter+1
     	if counter>maxreturn then
     	    break
@@ -140,9 +115,6 @@ function _M.getgameiplist(self,db)
     end
     
     ipstr=table.concat(ipinfo,",")
-    
-    
-
     return ipstr
 end
 
@@ -150,20 +122,15 @@ function _M.saveuserhistory(self,db)
     local nowstr
     nowstr=os.date("%Y-%m-%d %H:%M:%S")
 
-
     local sql = "insert into game_user_history_tbl(username,starttime,gameid,gameregionid) values ('" .. self.uid .."','".. nowstr.."',"..self.gameid..","..self.regionid..")"
     
     --log(ERR,sql)
-    
     local res,err,errcode,sqlstate = db:query(sql)
-    
-    
     if not res then
     	cc_global:returnwithcode(self.MOD_ERR_SAVEUSERHISTORY,nil)
     end
     
 end
-
 
 function _M.validategameregion(self,red,userreq)
 	local game_region_key
@@ -189,25 +156,21 @@ function _M.getgameiplistbysvpninfo(self,red,userreq)
 
 	local regionid
 
-
 	--1. validate gameid,regionid
 	self:validategameregion(red,userreq)
 
-
 	regionid=1		-- for current region 0 equals to region 1
-
-
 	
 	--2. getvpnid
 	vpnidkey="vpn_active_ip_to_id"
 	vpnidfield=self.svpninfo['ip']
-	if red:hexists(vpnidkey,vpnidfield)==0 then
+
+    vpnid = cc_global:redis_hash_get(red,vpnidkey,vpnidfield)
+	if vpnid == nil then
 		return nil
 	end
 
-	vpnid=red:hget(vpnidkey,vpnidfield)
-
-	--3. checkvpnrtt
+	--3. checkvpnrtt, less than MINVPNRTT, no need access vpn node ,return ""
 	if tonumber(self.svpninfo['rtt'])<MINVPNRTT then
 		return gameiplst		-- return empty list,not need use accelerate
 	end
@@ -216,36 +179,26 @@ function _M.getgameiplistbysvpninfo(self,red,userreq)
 	detectactiveidkey="vpn_"..vpnid.."_detect_activeid"
 	detectactiveidfield="game_"..self.gameid.."_region_"..regionid.."_activeid"
 
+    activeid = cc_global:redis_hash_get(red,detectactiveidkey, detectactiveidfield)
 
-	if red:hexists(detectactiveidkey,detectactiveidfield)==0 then
+	if activeid == nil or (tonumber(activeid)~=0 and tonumber(activeid)~=1) then
 		return nil
 	end
-
-	activeid=red:hget(detectactiveidkey,detectactiveidfield)
-	if tonumber(activeid)~=0 and tonumber(activeid)~=1 then
-		return nil
-	end
-
-	
-	
 	
 	--5. get gamelist
 	threshold=MAXTRANSRTT-tonumber(self.svpninfo['rtt'])
 	gamedetectkey="vpn_"..vpnid.."_game_"..self.gameid.."_region_"..regionid.."_detect_data_"..activeid
-
-
 
 	gameiplsttbl=red:zrangebyscore(gamedetectkey,0,threshold)
 
 	if table.getn(gameiplsttbl)==0 then
 		return gameiplst		
 	end
+    --log(ERR,"return iplist length: " .. table.getn(gameiplsttbl))
 
 	gameiplst=table.concat(gameiplsttbl,",")
-
 	return gameiplst	
 end
-
 
 function _M.getgameiplistwithoutsvpninfo(self,red,userreq)
 	local activeid,activeidkey,activeidfield
@@ -253,23 +206,24 @@ function _M.getgameiplistwithoutsvpninfo(self,red,userreq)
 	-- 1. validate gameid,regionid
 	self:validategameregion(red,userreq)
 
-
 	-- 2. get activeid
 	activeidkey="game_"..self.gameid.."_iplst_activeid"
 	activeidfield="region_"..self.regionid.."_activeid"
-	activeid=red:hget(activeidkey,activeidfield)
-	if activeid~=0 and activeid~=1 then
+    
+    activeid = cc_global:redis_hash_get(red,activeidkey,activeidfield)
+	if activeid == nil or (tonumber(activeid)~=0 and tonumber(activeid)~=1) then
 		return nil
 	end
 
 	--3. get gameiplst
 	gameiplstkey="game_"..self.gameid.."_iplst"
 	gameiplstfield="region_"..self.regionid.."_iplst_"..activeid
-	gameiplst=red:hget(gameiplstkey,gameiplstfield)
 
-
+    gameiplst = cc_global:redis_hash_get(red,gameiplstkey,gameiplstfield)
+    if gameiplst == nil then
+        return nil
+    end
 	return gameiplst
-
 end
 
 function _M.getgameiplistredis(self,red,userreq)
@@ -288,8 +242,6 @@ function _M.getgameiplistredis(self,red,userreq)
 	return gameiplist
 end
 
-
-
 function _M.process(self,userreq)
     self.uid=nil
     self.gameid=0
@@ -298,28 +250,50 @@ function _M.process(self,userreq)
 	local gameiplist
     
     self:checkparm(userreq)
-	
 
-
-
+    local switch_redis_on = nil
 	local red = cc_global:init_redis()
-	gameiplist=self:getgameiplistredis(red,userreq)
-	cc_global:deinit_redis(red)
+    if red ~= nil then
+        hashname = "game_redis_options"
+        key = "redis_enable"
+        switch_redis_on = cc_global:redis_hash_get(red,hashname,key)
+    end
 
+    --for test
+    --red = nil
+    --switch_redis_on = 1
 
-	local db = cc_global:init_conn()	
+    if tonumber(switch_redis_on) == 1 then
+        if red ~= nil then
+            --log(ERR,"redis enable, choose redis return gamelist")
+	        gameiplist=self:getgameiplistredis(red,userreq)
+	        cc_global:deinit_redis(red)
+        end
 
-	if gameiplist==nil then
+	    local db = cc_global:init_conn()	
+	    if gameiplist==nil then
+            --log(ERR,"redis return gamelist failed, choose mysql return gamelist...")
+    	    gameiplist=self:getgameiplist(db)
+	    end
+
+        self:saveuserhistory(db)
+	    cc_global:deinit_conn(db)
+    else
+        --log(ERR,"redis disable, choose mysql return gamelist")
+	    local db = cc_global:init_conn()	
     	gameiplist=self:getgameiplist(db)
-	end
 
-    self:saveuserhistory(db)
-	cc_global:deinit_conn(db)
-    
-    local retstr="\"" .. gameiplist .. "\""
+        self:saveuserhistory(db)
+	    cc_global:deinit_conn(db)
+    end
+
+    local retstr = ''
+    if gameiplist ~= nil then
+        retstr="\"" .. gameiplist .. "\""
+    end
+
     ngx.say(retstr)
     ngx.exit(200)
-    
 end
 
 return _M

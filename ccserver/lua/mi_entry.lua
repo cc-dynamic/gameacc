@@ -23,7 +23,6 @@ if "POST"==request_method then
     local cmdid = tonumber(userdata['cmdid'])
     local version = tostring(userdata['version'])
     local reqtime = tonumber(userdata['time'])
-    
     if cmdid == nil or version == nil or reqtime == nil then
         mi_global:returnwithcode(mi_global.ERR_PARAM_TYPE,nil)
     end

@@ -5,8 +5,12 @@ import redis
 
 VPN_ACTIVE_IP_TO_ID_DIC="vpn_active_ip_to_id"
 ACTIVE_GAMEID_SET="active_game_id"
+SPEC_USER_TO_SPEC_VPNIP = "spec_user_to_spec_vpnip"
+GAME_REDIS_OPTIONS = "game_redis_options"
 	
 # dic: vpn_acitve_ip_to_id: vpn ip to id ,field:vpnip,value:id
+# hash: spec_user_to_spec_vpnip: field:uid,value:vpnip
+# hash: game_redis_options field:redis_enable,value:0 or 1
 
 # dic: vpn_x_ava_rtt: 
 #	game y region z average rtt value field:game_y_region_z_ava_rtt,value:rttvalue 
@@ -144,6 +148,34 @@ def init_game_region_iplst(conn,cur,r):
 		print("exception in init_game_region_iplst:" + str(e))
 		
 	
+# init hash SPEC_USER_TO_SPEC_VPNIP
+def init_redis_options(r):
+    global GAME_REDIS_OPTIONS
+    try:
+        redis_enable = "redis_enable"
+        r.hset(GAME_REDIS_OPTIONS,redis_enable,0)
+    except Exception, e:
+        print("exception init_redis_options: " + str(e))
+
+# init hash SPEC_USER_TO_SPEC_VPNIP
+def init_spec_user_to_spec_vpnip(r):
+    try:
+        conn=MySQLdb.connect(host='localhost', port=3306, user='root', passwd='root', db='game1',charset="utf8")
+        cur=conn.cursor()
+
+        sql = "select username, vpnip from game_spec_user_vpn_tbl;"
+        ncnt = cur.execute(sql)
+        user_vpn_result = cur.fetchall()
+
+        for user_vpn_info in user_vpn_result:
+            r.hset(SPEC_USER_TO_SPEC_VPNIP,user_vpn_info[0],user_vpn_info[1])
+
+        cur.close()
+        conn.close()
+	
+    except Exception, e:
+        print("exception init_spec_user_to_spec_vpnip: " + str(e))
+
 
 def deleteallkeys(r):
 	try:
@@ -160,6 +192,11 @@ if __name__ == '__main__':
 		r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0,password='cc_chinacache',encoding='utf-8')
 		
 		deleteallkeys(r)
+        print("init redis switch ...")
+        init_redis_options(r)
+        print("init spec_user_to_spec_vpnip ...")
+        init_spec_user_to_spec_vpnip(r)
+
 		print("init_vpn_info")
 		init_vpn_info(conn,cur,r)
 		print("init_vpn_detect_info")
@@ -169,5 +206,3 @@ if __name__ == '__main__':
        
     except Exception,e:
         print("exception in main:"+str(e))
-        
-

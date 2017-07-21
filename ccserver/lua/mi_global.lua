@@ -18,11 +18,8 @@ local _M = {
     ERR_MOD_DB_BASE = ERR_BASE_ERROR-100,
     ERR_MOD_GETGAMEBRIEF_BASE = ERR_BASE_ERROR-200,
     ERR_MOD_QUERYACCT_BASE = ERR_BASE_ERROR-300,
-    
-    
-    
-    
 }
+
 local mt = { __index = _M}
 local cjson = require "cjson"
 
@@ -51,7 +48,6 @@ function _M.returnwithcode(self,errcode,data)
     ngx.exit(200)
 end
 
-
 function _M.init_conn(self)
     local mysql = require "resty.mysql"
     local db,err = mysql.new()
@@ -77,13 +73,11 @@ function _M.init_conn(self)
     return db
 end
 
-
 function _M.deinit_conn(self,db)
     local ok,err = db:close()
     if not ok then
     	self:returnwithcode(self.ERR_DBDEINIT,nil)
     end
 end
-
 
 return _M

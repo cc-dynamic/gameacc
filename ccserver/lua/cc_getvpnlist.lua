@@ -1,7 +1,6 @@
 require "os"
 
 local cc_global=require "cc_global"
-
 local MOD_ERR_BASE = cc_global.ERR_MOD_GETVPNIPLIST_BASE
 
 local _M = { 
@@ -16,16 +15,11 @@ local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
-
 local mt = { __index = _M}
-
-
 
 function _M.new(self)
 	return setmetatable({}, mt)
 end
-
 
 function _M.getvpnlist(self,db)
     local serverip={}
@@ -34,14 +28,12 @@ function _M.getvpnlist(self,db)
     --log(ERR,sql)
     
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	cc_global:returnwithcode(self.MOD_ERR_GETVPNLIST,nil)
     end
     
     local counter=1
     local ipinfo={}
-    
     
     for k,v in pairs(res) do
         --log(ERR,"iplist:",v[1])
@@ -51,8 +43,6 @@ function _M.getvpnlist(self,db)
     end
     
     ipstr=table.concat(ipinfo,",")
-    
-    
     serverip['iplist']=ipstr
     return serverip
 end
@@ -63,7 +53,7 @@ function _M:getvpnlist_redis(red)
 
 	local res,err = red:hkeys("vpn_active_ip_to_id")
 	if not res then
-		log(ERR,"getvpnlist_redis:"..tostring(err))
+		--log(ERR,"getvpnlist_redis:"..tostring(err))
 		return nil
 	end
 
@@ -78,24 +68,38 @@ function _M:getvpnlist_redis(red)
 
 	serverip['iplist']=ipstr
 	return serverip
-		
 end
 
 function _M.process(self,userreq)
 	local red = cc_global:init_redis()
 	local serverip
 
-	serverip=self:getvpnlist_redis(red)
-	cc_global:deinit_redis(red)
+    local switch_redis_on = nil
+    if red ~= nil then
+        hashname = "game_redis_options"
+        key = "redis_enable"
+        switch_redis_on = cc_global:redis_hash_get(red,hashname,key)
+    end
 
+    if tonumber(switch_redis_on) == 1 then
+        --log(ERR,"choose redis return vpn list...")
+	    serverip=self:getvpnlist_redis(red)
+	    cc_global:deinit_redis(red)
 
-	if serverip==nil then
-    	local db = cc_global:init_conn()
-    	serverip=self:getvpnlist(db)
-    	cc_global:deinit_conn(db)
-	end
+	    if serverip==nil then
+                --log(ERR,"redis return vpn list failed, choose mysql return vpn list...")
+    	        local db = cc_global:init_conn()
+    	        serverip=self:getvpnlist(db)
+    	        cc_global:deinit_conn(db)
+	    end
+    else
+        --log(ERR,"redis disable, mysql return vpn list...")
+	    local db = cc_global:init_conn()
+   	    serverip=self:getvpnlist(db)
+   	    cc_global:deinit_conn(db)
+    end
+
     cc_global:returnwithcode(0,serverip)
-
 end
 
 return _M

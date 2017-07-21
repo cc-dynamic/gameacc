@@ -1,7 +1,6 @@
 require "os"
 
 local mi_global=require "mi_global"
-
 local MOD_ERR_BASE = mi_global.ERR_MOD_QUERYACCT_BASE
 
 local _M = { 
@@ -11,22 +10,17 @@ local _M = {
     MOD_ERR_INVALID_PARAM = MOD_ERR_BASE-3,
     MOD_ERR_PARAM_TYPE = MOD_ERR_BASE-4,
     MOD_ERR_QUERY_ACCT = MOD_ERR_BASE-5,
-    
 }
 
 local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
-
 local mt = { __index = _M}
-
 
 function _M.new(self)
 	return setmetatable({}, mt)
 end
-
 
 function _M.checkparam(self,userreq)
     local timestart,timeend,uid
@@ -35,14 +29,9 @@ function _M.checkparam(self,userreq)
     if userreq['data']==nil then
         mi_global:returnwithcode(self.MOD_ERR_INVALID_PARAM,nil)
     end
-   
  
     local req_param=userreq['data']
-
-
 	--log(ERR,req_param['timestart'],req_param['timeend'],req_param['uid'])
-
-
     if req_param['timestart'] == nil or req_param['timeend'] == nil or req_param['uid'] == nil then
         mi_global:returnwithcode(self.MOD_ERR_INVALID_PARAM,nil)
     end
@@ -66,7 +55,6 @@ function _M.checkparam(self,userreq)
     self.timeend=timeend
     self.count=count
     self.uid=uid
- 
 end
 
 function _M.query_acct(self,db)
@@ -79,11 +67,8 @@ function _M.query_acct(self,db)
         sql = sql .. " limit " .. self.count
     end
     
-    
     --log(ERR,sql)
-    
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	mi_global:returnwithcode(self.MOD_ERR_QUERY_ACCT,nil)
     end
@@ -100,7 +85,6 @@ function _M.query_acct(self,db)
     end
     
     return acct_info
-    
 end
 
 function _M.process(self,userreq)
@@ -116,7 +100,6 @@ function _M.process(self,userreq)
     mi_global:deinit_conn(db)
     
     mi_global:returnwithcode(0,acct_info)
-    
 end
 
 return _M

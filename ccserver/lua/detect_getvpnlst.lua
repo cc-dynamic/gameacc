@@ -1,7 +1,6 @@
 require "os"
 
 local detect_global=require "detect_global"
-
 local MOD_ERR_BASE = detect_global.ERR_MOD_GETVPNLST_BASE
 
 local _M = { 
@@ -16,35 +15,24 @@ local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
-
 local mt = { __index = _M}
-
-
 
 function _M.new(self)
 	return setmetatable({}, mt)
 end
-
 
 function _M.getvpnlst(self,db)
     local sql
     local returnlst={}
 	local vpn_node_lst={}
     
-    
     sql="select nodeid,nodename,multi_detect_ifacelst,multi_detect_iplst,nodestatus,enabled from vpn_node_tbl order by nodeid"
     
-
     --log(ERR,sql)
-    
-    
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	detect_global:returnwithcode(self.MOD_ERR_GETVPNLST,nil)
     end
-    
     
     for k,v in pairs(res) do
 		-- nodeid, nodename,multi_detect_ifacelst,multi_detect_iplst,nodestatus,enabled
@@ -59,10 +47,8 @@ function _M.getvpnlst(self,db)
     end
     
     returnlst["vpn_node_lst"]=vpn_node_lst
-
     return returnlst
 end
-
 
 function _M.process(self,userreq)
     local db = detect_global:init_conn()

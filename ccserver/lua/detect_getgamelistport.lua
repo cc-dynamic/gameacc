@@ -1,7 +1,6 @@
 require "os"
 
 local detect_global=require "detect_global"
-
 local MOD_ERR_BASE = detect_global.ERR_MOD_GETGAMELISTPORT_BASE
 
 local _M = { 
@@ -15,16 +14,11 @@ local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
-
 local mt = { __index = _M}
-
-
 
 function _M.new(self)
 	return setmetatable({}, mt)
 end
-
 
 function _M.checkparm(self,userreq)
     local gameid,regionid
@@ -46,7 +40,6 @@ function _M.checkparm(self,userreq)
     
     self.gameid=gameid
     self.regionid=regionid
- 
 end
 
 function _M.getdetectipportlist(self,db)
@@ -62,22 +55,16 @@ function _M.getdetectipportlist(self,db)
     end
 
     --log(ERR,sql)
-    
-    
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	detect_global:returnwithcode(self.MOD_ERR_GETGAMELIST,nil)
     end
     
-    
     for k,v in pairs(res) do
         --log(ERR,"iplist:",v[1]," ",v[2]," ",v[3]," ",v[4])
-
     	-- gameregionid(1),gameip(2),gamemask(3),gameport(4)
     	local regionitem={}
     	local regionid
-    	
     	
     	regionid=tostring(v[1])
     	
@@ -105,15 +92,12 @@ function _M.getdetectipportlist(self,db)
     end
     
     returnlst['detectregionlst']=detectregionlst
-
     return returnlst
 end
-
 
 function _M.process(self,userreq)
     self.gameid=0
     self.regionid=0
-    
     
     self:checkparm(userreq)
     local db = detect_global:init_conn()

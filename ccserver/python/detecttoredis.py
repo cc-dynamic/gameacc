@@ -12,31 +12,23 @@ import redis
 
 from detecttoredis_log import *
 
-
 VERSION='0.1.0'
-
 
 if (hasattr(os, "devnull")):
     NULL_DEVICE = os.devnull
 else:
     NULL_DEVICE = "/dev/null"
 
-
 DEBUG=0     # -d option
 QUIET=0     # -q option
 
 p_need_exit = 0;
-
 main_thread_info = {};
-
 reports = Queue.Queue()
-
 AVA_INF = 99999
-
 
 def loginfo(fmt,*arg):
     log_message.info(fmt % arg)
-    
 
 def logerr(fmt,*arg):
     if (not QUIET):
@@ -45,7 +37,6 @@ def logerr(fmt,*arg):
 def logdebug(fmt,*arg):
     if ((not QUIET) and (DEBUG)):
         log_message.debug(fmt % arg)
-
     
 def _redirectFileDescriptors():
     import resource  # POSIX resource information
@@ -63,13 +54,10 @@ def _redirectFileDescriptors():
         except OSError:
             pass
 
-
     os.open(NULL_DEVICE, os.O_RDWR)
 
     os.dup2(0, 1)
     os.dup2(0, 2)
-
-
 
 def python_daemon():
 
@@ -84,7 +72,6 @@ def python_daemon():
         logerr("fork failed ...");
         os._exit(1)
 
-
     os.chdir('/');
     os.setsid();
     os.umask(0);
@@ -94,13 +81,10 @@ def python_daemon():
             os._exit(0)
 
         _redirectFileDescriptors()
-
-
     except OSError, e:
         logerr("fork failed ...")
         os._exit(1)
     
-
 class ReportHandler(BaseHTTPRequestHandler):
     def check_report(self,report):
         if report.has_key("vpnid") == False:
@@ -134,9 +118,6 @@ class ReportHandler(BaseHTTPRequestHandler):
         except Exception,e:
             logerr("exception in doPOST:" + str(e))
             self.send_error(400,'Bad Request')
-        
-        
-        
 
 #class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 #    """Handle requests in a separate thread."""
@@ -162,7 +143,6 @@ def server_thread_func():
     main_thread_info["server_thread"] = tid;
 
     tid.start();
-
 
 def deal_report(r,report):
     rpt_vpnid=report["vpnid"]
@@ -225,11 +205,8 @@ def deal_report(r,report):
 		else:
 			ava_report_average=AVA_INF
 
-
 		loginfo("average report ava="+str(ava_report_average))
 
-
-		
 		# update ava rtt
 		## get game region
 		regionsetkey="game_"+str(rpt_gameid)+"_region"
@@ -237,10 +214,8 @@ def deal_report(r,report):
 
 		ava_region_key="vpn_"+str(rpt_vpnid)+"_ava_rtt"
 
-
 		ava_counter=0
 		ava_total=0
-
 
 		## get region ava rtt
 		for regionid in regionlst:
@@ -251,7 +226,6 @@ def deal_report(r,report):
 			exist1=r.hexists(ava_region_key,ava_region_rtt_field)
 			ava_region_rtt_cnt_field="game_"+str(gameid)+"_region_"+str(regionid)+"_rtt_cnt"
 			exist2=r.hexists(ava_region_key,ava_region_rtt_cnt_field)
-
 
 			if exist1==False or exist2==False:
 				logerr(ava_region_rtt_field + " or " + ava_region_rtt_cnt_field + " not exist")
@@ -264,7 +238,6 @@ def deal_report(r,report):
 				ava_counter=ava_counter+ava_rtt_cnt
 				ava_total=ava_total+ava_rtt_value*ava_rtt_cnt
 
-
 		ava_counter=ava_counter+ava_report_counter
 		ava_total=ava_total+ava_report_total
 
@@ -272,7 +245,6 @@ def deal_report(r,report):
 			ava_average=ava_total/ava_counter
 		else:
 			ava_average=AVA_INF
-
 
 		# update region ava rtt
 		ava_region_rtt_field="game_"+str(rpt_gameid)+"_region_"+str(rpt_regionid)+"_rtt"
@@ -286,25 +258,17 @@ def deal_report(r,report):
 		
 		# set activeid
 		r.hset(activeid_key,activeid_field,activeid)
-		
-
-    
     except Exception,e:
         print("except in in deal_report:"+str(e))
         logerr("except in in deal_report:"+str(e))
         return
     
-    
-    
-
-
 if __name__ == '__main__':
     try:
         opts,args = getopt.getopt(sys.argv[1:],"vdq")
     except getopt.GetoptError:
         print "illegal option(s) -- " + str(sys.argv[1:])
 	sys.exit(0);
-
 
     for name,value in opts:
         if ( name == "-v" ):
@@ -317,9 +281,7 @@ if __name__ == '__main__':
         if ( name == "-q" ):
             QUIET = 1
     
-    
     python_daemon()
-    
     
     try:
 	   	r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0,password='cc_chinacache',encoding='utf-8')
@@ -329,11 +291,6 @@ if __name__ == '__main__':
         print("exception in main:"+str(e))
         logerr("exception in main:"+str(e))
         p_need_exit=1
-    
-    
-    
-    
-	    
     
     while True:
         if(p_need_exit):
@@ -346,10 +303,3 @@ if __name__ == '__main__':
             deal_report(r,report)
 
         time.sleep(5)
-        
-    
-    
-    
-    
-    
-    

@@ -1,7 +1,6 @@
 require "os"
 
 local mi_global=require "mi_global"
-
 local MOD_ERR_BASE = mi_global.ERR_MOD_GETGAMEBRIEF_BASE
 
 local _M = { 
@@ -18,17 +17,11 @@ local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
-
-
 local mt = { __index = _M}
-
 
 function _M.new(self)
 	return setmetatable({}, mt)
 end
-
-
 
 function _M.get_all_region(self,db)
     local tmpgamelist={}
@@ -36,24 +29,18 @@ function _M.get_all_region(self,db)
     local sql_game_all_region="select game_name_tbl.game_id,game_name_tbl.game_name,game_name_tbl.game_icon_url,game_region_tbl.regionid,game_region_tbl.regionname,game_region_tbl.ispname from game_name_tbl,game_region_tbl where game_name_tbl.game_id=game_region_tbl.gameid and game_name_tbl.admin_enable=1 order by game_name_tbl.game_id"
     
     local res,err,errcode,sqlstate = db:query(sql_game_all_region)
-    
     if not res then
     	mi_global:returnwithcode(self.MOD_ERR_GETREGION,nil)
     end
     
-    
     -- game_id(1),game_name(2),icon_url(3),regionid(4),regionname(5),ispname(6)
-    
-    
     for k,v in pairs(res) do
         --log(ERR,"game region:",v[1]," ",v[2]," ",v[3]," ",v[4]," ",v[5]," ",v[6])
         local gameitem={}
         local regionitem={}
         local regionlist,gameindex,regionindex
         
-        
         gameindex=tostring(v[1])
-           
     
         if tmpgamelist[gameindex]== nil then      -- new game
             gameitem['game_id']=v[1]
@@ -65,9 +52,7 @@ function _M.get_all_region(self,db)
         end
         
         regionlist=gameitem['regionlist']
-        
         regionindex=tostring(v[4])
-        
         
         regionitem['region_id']=regionindex
         regionitem['region_name']=v[5]
@@ -75,16 +60,12 @@ function _M.get_all_region(self,db)
         regionitem['detect_ip_list']={}
         regionitem['brief_ip_list']={}
         
-        
         regionlist[regionindex]=regionitem		    -- add region    
         gameitem['regionlist']=regionlist           -- update gameitem
         tmpgamelist[gameindex]=gameitem                -- update tmpgamelist
     end
-    
-    
     return tmpgamelist
 end
-
 
 -- require self.tmpgamelist
 function _M.getbrieflist(self,db)
@@ -97,8 +78,6 @@ function _M.getbrieflist(self,db)
     end
     
     -- gameid(1),gameregionid(2),gameip(3),gamemask(4)
-    
-    
     for k,v in pairs(res) do
         --log(ERR,"brief ip list: ",v[1]," ",v[2]," ",v[3]," ",v[4])
         
@@ -108,12 +87,11 @@ function _M.getbrieflist(self,db)
         local regionlist,gameindex,regionindex
         gameindex=tostring(v[1])
         
-        
         if self.tmpgamelist[gameindex] ~= nil then
             gameitem=self.tmpgamelist[gameindex]
             
             regionindex=tostring(v[2])
-    	regionlist=gameitem['regionlist']
+    	    regionlist=gameitem['regionlist']
             
             if regionlist[regionindex] ~= nil then
                 regionitem=regionlist[regionindex]
@@ -122,7 +100,6 @@ function _M.getbrieflist(self,db)
                 ipitem['brief_mask']=v[4]
     
                 table.insert(regionitem['brief_ip_list'],ipitem)
-                
                 
                 regionlist[regionindex]=regionitem		    -- update region    
                 gameitem['regionlist']=regionlist           -- update gameitem
@@ -144,17 +121,13 @@ function _M.getdetectlist(self,db)
     end
     
     -- gameid(1),gameregionid(2),gameip(3),gamemask(4),gameport(5)
-    
     for k,v in pairs(res) do
-    	
         --log(ERR,"detect ip list: ",v[1]," ",v[2]," ",v[3]," ",v[4]," ",v[5])
-        
         local gameitem={}
         local regionitem={}
         local ipitem={}
         local regionlist,gameindex,regionindex
         gameindex=tostring(v[1])
-        
         
         if self.tmpgamelist[gameindex] ~= nil then
             gameitem=self.tmpgamelist[gameindex]
@@ -171,14 +144,11 @@ function _M.getdetectlist(self,db)
     
                 table.insert(regionitem['detect_ip_list'],ipitem)
                 
-                
                 regionlist[regionindex]=regionitem		    -- update region    
                 gameitem['regionlist']=regionlist           -- update gameitem
                 self.tmpgamelist[gameindex]=gameitem                -- update tmpgamelist
-            
             end    
         end
-        
     end
 end
 
@@ -201,11 +171,8 @@ function _M.filtergamelist(self)
         gameitem['regionlist']=nil
         table.insert(gamelist,gameitem)
     end
-    
     return gamelist
 end
-
-
 
 function _M.process(self,userreq)
     self.tmpgamelist=nil
@@ -216,10 +183,7 @@ function _M.process(self,userreq)
     mi_global:deinit_conn(db)
     
     local gamelist=self:filtergamelist()
-    
     mi_global:returnwithcode(0,gamelist)
-    
 end
-
 
 return _M

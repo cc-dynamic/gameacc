@@ -1,7 +1,6 @@
 require "os"
 
 local cc_global=require "cc_global"
-
 local MOD_ERR_BASE = cc_global.ERR_MOD_GETGAMELISTPORT_BASE
 
 local _M = { 
@@ -19,16 +18,11 @@ local log = ngx.log
 local ERR = ngx.ERR
 local INFO = ngx.INFO
 
-
-
 local mt = { __index = _M}
-
-
 
 function _M.new(self)
 	return setmetatable({}, mt)
 end
-
 
 function _M.checkparm(self,userreq)
     local gameid,regionid
@@ -51,7 +45,6 @@ function _M.checkparm(self,userreq)
     self.gameid=gameid
     self.regionid=regionid
     self.uid=tostring(userreq['uid'])
- 
 end
 
 function _M.getgameiplist(self,db)
@@ -68,7 +61,6 @@ function _M.getgameiplist(self,db)
     --log(ERR,sql)
     
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	cc_global:returnwithcode(self.MOD_ERR_GETGAMELIST,nil)
     end
@@ -94,7 +86,6 @@ function _M.getgameiplist(self,db)
     
     
     local res,err,errcode,sqlstate = db:query(sql)
-    
     if not res then
     	cc_global:returnwithcode(self.MOD_ERR_GETGAMELIST,nil)
     end
@@ -105,17 +96,12 @@ function _M.getgameiplist(self,db)
     counter=1
 
     -- gameip(1),gamemask(2),gameport(3)
-
-    
     local ipstr=""
     local ipinfo={}
     
     for k,v in pairs(res) do
         --log(ERR,"iplist:",v[1]," ",v[2]," ",v[3])
-
-    	
     	ipinfo[counter]=v[1]..":"..tostring(v[3]).."/"..tostring(v[2])
-    	
     	counter=counter+1
     	if counter>maxreturn then
     	    break
@@ -123,9 +109,7 @@ function _M.getgameiplist(self,db)
     end
     
     ipstr=table.concat(ipinfo,",")
-    
     gameiplist['iplist']=ipstr
-
     return gameiplist
 end
 
@@ -133,14 +117,10 @@ function _M.saveuserhistory(self,db)
     local nowstr
     nowstr=os.date("%Y-%m-%d %H:%M:%S")
 
-
     local sql = "insert into game_user_history_tbl(username,starttime,gameid,gameregionid) values ('" .. self.uid .."','".. nowstr.."',"..self.gameid..","..self.regionid..")"
     
     --log(ERR,sql)
-    
     local res,err,errcode,sqlstate = db:query(sql)
-    
-    
     if not res then
     	cc_global:returnwithcode(self.MOD_ERR_SAVEUSERHISTORY,nil)
     end
@@ -151,7 +131,6 @@ function _M.process(self,userreq)
     self.uid=nil
     self.gameid=0
     self.regionid=0
-    
     
     self:checkparm(userreq)
     local db = cc_global:init_conn()
