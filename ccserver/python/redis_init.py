@@ -192,10 +192,10 @@ if __name__ == '__main__':
 		r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0,password='cc_chinacache',encoding='utf-8')
 		
 		deleteallkeys(r)
-        print("init redis switch ...")
-        init_redis_options(r)
-        print("init spec_user_to_spec_vpnip ...")
-        init_spec_user_to_spec_vpnip(r)
+		print("init redis switch ...")
+		init_redis_options(r)
+		print("init spec_user_to_spec_vpnip ...")
+		init_spec_user_to_spec_vpnip(r)
 
 		print("init_vpn_info")
 		init_vpn_info(conn,cur,r)
