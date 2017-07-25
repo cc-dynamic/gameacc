@@ -440,8 +440,8 @@ def detectgamelst():
         
             #测试gameid为 327,355,145等游戏
             #if gameid != 327 and gameid != 355 and gameid != 145:
-            if gameid != 277 and gameid != 366 and gameid != 386:
-                continue
+            #if gameid != 277 and gameid != 366 and gameid != 386:
+            #    continue
 
             loginf("in detectgamelst,  gameid: %d, regionidlst: %s" % (gameid, str(regionidlst)))
 
