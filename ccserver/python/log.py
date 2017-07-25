@@ -16,7 +16,7 @@ import datetime
 import threading
 import traceback
 
-PROCESS_PATH = "/root/detectagent/"
+PROCESS_PATH = "/data/proclog/log/detectagent/"
 
 __all__ = ['loginf', 'logwarn', 'logerr', 'logfatal', 'trace_err']
 
