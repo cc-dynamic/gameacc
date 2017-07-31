@@ -186,7 +186,7 @@ def deleteallkeys(r):
 
 if __name__ == '__main__':
     try:
-		conn=MySQLdb.connect(host='localhost', port=3306, user='root', passwd='root', db='game2',charset="utf8")
+		conn=MySQLdb.connect(host='localhost', port=3306, user='root', passwd='root', db='game1',charset="utf8")
 		cur=conn.cursor()
         
 		r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0,password='cc_chinacache',encoding='utf-8')
