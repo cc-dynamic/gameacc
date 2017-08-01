@@ -16,13 +16,13 @@ import copy
 VERSION='0.1.0'
 local_config = {                                                           \
                 #"detecturl":"http://games.nubesi.com/vpn/detectgame",     \
-                "detecturl":"http://223.202.204.183/vpn/detectgame",       \
+                "detecturl":"http://223.202.197.12/vpn/detectgame",       \
 		"sleepinterval":14400,                                    \
 		#"sleepinterval":1800,                                      \
 		#"sleepinterval":300,                                      \
 		"concurrentnum":40,                                        \
 		#"concurrentnum":4,                                        \
-		"reporturl":"http://223.202.204.183:8181/"                 \
+		"reporturl":"http://223.202.197.12:8181/"                 \
 		#"reporturl":"http://127.0.0.1:8181/"                      \
                }
                 
