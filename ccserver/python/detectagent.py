@@ -15,11 +15,10 @@ import copy
 
 VERSION='0.1.0'
 local_config = {                                                           \
-                #"detecturl":"http://games.nubesi.com/vpn/detectgame",     \
-                "detecturl":"http://223.202.197.12/vpn/detectgame",       \
-		"sleepinterval":14400,                                    \
+                "detecturl":"http://games.nubesi.com/vpn/detectgame",     \
+                #"detecturl":"http://223.202.197.12/vpn/detectgame",       \
+		"sleepinterval":28800,                                    \
 		#"sleepinterval":1800,                                      \
-		#"sleepinterval":300,                                      \
 		"concurrentnum":40,                                        \
 		#"concurrentnum":4,                                        \
 		"reporturl":"http://223.202.197.12:8181/"                 \
@@ -39,6 +38,8 @@ local_vpn_info = {}
 vpnnodes_dict = {}
 #存储所有ip的探测数据
 ip_detect_data = {}
+
+enable_cc_iplst = []
 
 VPNID = -1    # id of this vpn node
 GAMELST = []
@@ -393,9 +394,18 @@ def regionreport(gameid, regionid, resultdict):
     
     headers={'Content-Type': 'application/json'}
     
+    global enable_cc_iplst
     try:    
-        request = urllib2.Request(local_config['reporturl'],headers=headers,data=json.dumps(body))
-        response = urllib2.urlopen(request)
+        for ip in enable_cc_iplst:
+            url = "http://%s:8181/" % ip
+            try:
+                request = urllib2.Request(url,headers=headers,data=json.dumps(body))
+                response = urllib2.urlopen(request)
+                loginf("report to %s success..." % ip)
+            except Exception, e:
+                loginf("report to %s failed..." % ip)
+                trace_err("report data failed...")
+            #time.sleep(60)
         return True
         
     except Exception,e:
@@ -566,6 +576,52 @@ def get_vpnid():
         trace_err("Exception in get_vpnid: %s" % str(e))
         return -1
 
+def getcclst():
+    global enable_cc_iplst
+    try:
+        cmd = {
+                'cmdid':4,
+                'version':"0.1",
+                'time':int(time.time())
+        }
+
+        headers = {'Content-Type': 'application/json'}
+        cmdparm = {}
+        cmd['data'] = cmdparm
+
+        try:    
+            request = urllib2.Request(local_config['detecturl'],headers=headers,data=json.dumps(cmd))
+            response = urllib2.urlopen(request)
+            ret = response.read()
+            retval = json.loads(ret)
+
+            if retval['code'] != 0:
+                trace_err("getccinfo list return with code " + str(retval['code']))
+                return -1
+        
+            '''
+            retval['data']['cc_node_lst']的数据格式：
+            [
+              {"nodename":"BGP-SM-1-3f7","enabled":1,"nodeip":"223.202.197.12"},
+              {"nodename":"BGP-SM-g-3gk","enabled":1,"nodeip":"223.202.204.196"},
+              {"nodename":"BGP-SM-g-3gl","enabled":1,"nodeip":"223.202.204.197"},
+              {"nodename":"BGP-SH-9-3g4","enabled":1,"nodeip":"163.53.95.199"}
+            ]
+            '''
+            enable_cc_iplst = []
+            ccnodes_infolst = retval['data']['cc_node_lst']
+            if ccnodes_infolst:
+                for item in ccnodes_infolst:
+                    if item["enabled"] == 1:
+                        enable_cc_iplst.append(item["nodeip"])
+            return 0
+        except Exception,e:
+            trace_err("getccinfo list excption:" + str(e))
+            return -1
+    except Exception, e:
+        trace_err("Exception in getcclst: %s" % str(e))
+        return 0
+
 if __name__ == '__main__':
     try:
         opts,args = getopt.getopt(sys.argv[1:],"vdq")
@@ -605,6 +661,12 @@ if __name__ == '__main__':
             time.sleep(1)
             sys.exit(0)
         
+        ret = getcclst()
+        if ret < 0:
+            loginf("获取cc服务器ip列表失败...")
+        else:
+            loginf("cc服务器的ip列表为: %s" % str(enable_cc_iplst))
+
         getgamelst()
         detectgamelst()    
         time.sleep(local_config['sleepinterval'])
